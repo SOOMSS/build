@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>설계사무실 - 건축 설계</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: '🏗️';
+            font-size: 3rem;
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 20px;
+            padding: 30px;
+            min-height: 80vh;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+
+        .country-select, .style-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .country-select:focus, .style-select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .style-info {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3498db;
+        }
+
+        .style-info h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .style-info p {
+            color: #666;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .design-canvas {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .canvas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .canvas-header h3 {
+            color: #2c3e50;
+            font-size: 1.4rem;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            border: 2px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .view-btn.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .view-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .canvas-area {
+            width: 100%;
+            height: 500px;
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
+                        linear-gradient(-45deg, #f8f9fa 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #f8f9fa 75%), 
+                        linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .canvas-placeholder {
+            text-align: center;
+            color: #999;
+            font-size: 1.1rem;
+        }
+
+        .drawing-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+            border-radius: 10px;
+        }
+
+        .tools-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .tool-section {
+            margin-bottom: 25px;
+        }
+
+        .tool-section h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .tool-btn {
+            padding: 12px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .tool-btn:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tool-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .color-btn {
+            width: 100%;
+            height: 30px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .color-btn.active {
+            border-color: #333;
+            border-width: 3px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .btn-save {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-clear {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-export {
+            background: #f39c12;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .design-notes {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .design-notes h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .design-notes textarea {
+            width: 100%;
+            height: 100px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .design-notes textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .sidebar, .tools-panel {
+                order: -1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>설계사무실</h1>
+            <p>마인크래프트 건축을 위한 설계 도구</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 왼쪽 사이드바 - 건축양식 정보 -->
+            <div class="sidebar">
+                <h3>🌍 건축양식 선택</h3>
+                
+                <select class="country-select" id="countrySelect">
+                    <option value="">국가/지역 선택</option>
+                    <option value="japan">일본</option>
+                    <option value="korea">한국</option>
+                    <option value="china">중국</option>
+                    <option value="europe">유럽</option>
+                    <option value="modern">현대건축</option>
+                </select>
+
+                <select class="style-select" id="styleSelect">
+                    <option value="">건축양식 선택</option>
+                </select>
+
+                <div class="style-info" id="styleInfo">
+                    <h4>건축양식을 선택해주세요</h4>
+                    <p>국가와 건축양식을 선택하면 해당 스타일의 특징과 설계 팁을 확인할 수 있습니다.</p>
+                </div>
+            </div>
+
+            <!-- 중앙 캔버스 영역 -->
+            <div class="design-canvas">
+                <div class="canvas-header">
+                    <h3>📐 설계 캔버스</h3>
+                    <div class="view-toggle">
+                        <button class="view-btn active" data-view="top">평면도</button>
+                        <button class="view-btn" data-view="front">정면도</button>
+                        <button class="view-btn" data-view="side">측면도</button>
+                    </div>
+                </div>
+
+                <div class="canvas-area" id="canvasArea">
+                    <canvas class="drawing-canvas" id="drawingCanvas" width="800" height="500"></canvas>
+                    <div class="canvas-placeholder" id="canvasPlaceholder">
+                        <p>✏️ 여기에 건축물을 설계해보세요!</p>
+                        <p>도구를 선택하고 캔버스에 그려보세요</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽 도구 패널 -->
+            <div class="tools-panel">
+                <div class="tool-section">
+                    <h4>🛠️ 그리기 도구</h4>
+                    <div class="tool-grid">
+                        <button class="tool-btn active" data-tool="pen">✏️ 펜</button>
+                        <button class="tool-btn" data-tool="line">📏 직선</button>
+                        <button class="tool-btn" data-tool="rect">⬜ 사각형</button>
+                        <button class="tool-btn" data-tool="circle">⭕ 원</button>
+                        <button class="tool-btn" data-tool="eraser">🗑️ 지우개</button>
+                        <button class="tool-btn" data-tool="text">📝 텍스트</button>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h4>🎨 색상</h4>
+                    <div class="color-palette">
+                        <div class="color-btn active" data-color="#000000" style="background: #000000;"></div>
+                        <div class="color-btn" data-color="#8B4513" style="background: #8B4513;"></div>
+                        <div class="color-btn" data-color="#DC143C" style="background: #DC143C;"></div>
+                        <div class="color-btn" data-color="#32CD32" style="background: #32CD32;"></div>
+                        <div class="color-btn" data-color="#1E90FF" style="background: #1E90FF;"></div>
+                        <div class="color-btn" data-color="#FFD700" style="background: #FFD700;"></div>
+                        <div class="color-btn" data-color="#FF69B4" style="background: #FF69B4;"></div>
+                        <div class="color-btn" data-color="#9370DB" style="background: #9370DB;"></div>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h4>⚙️ 작업</h4>
+                    <div class="action-buttons">
+                        <button class="action-btn btn-save" id="saveBtn">💾 저장</button>
+                        <button class="action-btn btn-clear" id="clearBtn">🗑️ 지우기</button>
+                        <button class="action-btn btn-export" id="exportBtn">📤 내보내기</button>
+                    </div>
+                </div>
+
+                <div class="design-notes">
+                    <h4>📝 설계 메모</h4>
+                    <textarea id="designNotes" placeholder="설계 아이디어나 특징을 메모해보세요..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 건축양식 데이터
+        const architectureData = {
+            japan: {
+                name: "일본",
+                styles: {
+                    traditional: {
+                        name: "전통 일본 건축",
+                        features: "목재 중심, 처마가 깊음, 다다미 방, 미닫이문(쇼지), 정원과의 조화",
+                        colors: ["#8B4513", "#654321", "#2F4F2F", "#DC143C"],
+                        tips: "• 지붕의 곡선과 처마 라인 강조\n• 자연소재 활용\n• 개방감과 통풍 고려"
+                    },
+                    machiya: {
+                        name: "마치야 (상가주택)",
+                        features: "좁고 긴 형태, 전면 상점+후면 주거, 중정(쓰보니와), 격자창",
+                        colors: ["#8B4513", "#2F4F2F", "#000000", "#F5DEB3"],
+                        tips: "• 좁은 전면폭, 깊은 건물\n• 중앙 중정으로 채광 확보\n• 전통 격자창 디자인"
+                    },
+                    wabisabi: {
+                        name: "와비사비",
+                        features: "불완전함의 미, 자연스러운 재료, 단순함, 시간의 흔적",
+                        colors: ["#A0522D", "#696969", "#2F4F2F", "#F5F5DC"],
+                        tips: "• 완벽하지 않은 자연스러운 라인\n• 풍화된 질감 표현\n• 미니멀한 구성"
+                    }
+                }
+            },
+            korea: {
+                name: "한국",
+                styles: {
+                    hanok: {
+                        name: "한옥",
+                        features: "기와지붕, 마루와 온돌, 처마 곡선, 자연과의 조화, 대청마루",
+                        colors: ["#8B4513", "#DC143C", "#2F4F2F", "#F5DEB3"],
+                        tips: "• 처마의 우아한 곡선\n• 마당 중심의 ㄱ자, ㅁ자 배치\n• 자연 지형 활용"
+                    },
+                    palace: {
+                        name: "궁궐 건축",
+                        features: "다포계 공포, 화려한 단청, 대칭적 배치, 월대와 계단",
+                        colors: ["#DC143C", "#32CD32", "#FFD700", "#1E90FF"],
+                        tips: "• 권위적이고 장엄한 느낌\n• 화려한 색채 대비\n• 대칭적 구성"
+                    }
+                }
+            },
+            china: {
+                name: "중국",
+                styles: {
+                    traditional: {
+                        name: "전통 중국 건축",
+                        features: "사합원 구조, 용마루, 화려한 장식, 붉은 기둥, 기와지붕",
+                        colors: ["#DC143C", "#FFD700", "#8B4513", "#2F4F2F"],
+                        tips: "• 중정을 둘러싼 건물 배치\n• 붉은색과 금색 조합\n• 용, 봉황 등 장식 요소"
+                    }
+                }
+            },
+            europe: {
+                name: "유럽",
+                styles: {
+                    gothic: {
+                        name: "고딕 건축",
+                        features: "첨탑, 아치형 창문, 석재 건축, 높은 천장, 스테인드글라스",
+                        colors: ["#696969", "#2F4F2F", "#1E90FF", "#9370DB"],
+                        tips: "• 수직적 강조\n• 아치와 곡선 활용\n• 웅장하고 신비로운 분위기"
+                    },
+                    renaissance: {
+                        name: "르네상스 건축",
+                        features: "대칭적 구조, 돔, 고전적 기둥, 조화로운 비례",
+                        colors: ["#F5DEB3", "#8B4513", "#FFD700", "#DC143C"],
+                        tips: "• 완벽한 대칭과 비례\n• 고전적 질서와 조화\n• 인간적 스케일"
+                    }
+                }
+            },
+            modern: {
+                name: "현대건축",
+                styles: {
+                    minimalist: {
+                        name: "미니멀리즘",
+                        features: "단순한 형태, 깔끔한 선, 기능 중심, 여백의 미",
+                        colors: ["#FFFFFF", "#000000", "#696969", "#C0C0C0"],
+                        tips: "• 불필요한 장식 제거\n• 기능적 공간 구성\n• 깔끔한 직선"
+                    },
+                    sustainable: {
+                        name: "친환경 건축",
+                        features: "에너지 효율, 자연 채광, 친환경 재료, 녹색 지붕",
+                        colors: ["#32CD32", "#8B4513", "#1E90FF", "#FFD700"],
+                        tips: "• 자연광 최대 활용\n• 단열과 환기 고려\n• 재생 가능 에너지"
+                    }
+                }
+            }
+        };
+
+        // DOM 요소들
+        const countrySelect = document.getElementById('countrySelect');
+        const styleSelect = document.getElementById('styleSelect');
+        const styleInfo = document.getElementById('styleInfo');
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasPlaceholder = document.getElementById('canvasPlaceholder');
+
+        // 현재 상태
+        let currentTool = 'pen';
+        let currentColor = '#000000';
+        let isDrawing = false;
+        let startX, startY;
+        let drawings = [];
+
+        // 초기 설정
+        canvas.style.display = 'none';
+
+        // 국가 선택 이벤트
+        countrySelect.addEventListener('change', function() {
+            const selectedCountry = this.value;
+            styleSelect.innerHTML = '<option value="">건축양식 선택</option>';
+            
+            if (selectedCountry && architectureData[selectedCountry]) {
+                Object.keys(architectureData[selectedCountry].styles).forEach(styleKey => {
+                    const style = architectureData[selectedCountry].styles[styleKey];
+                    const option = document.createElement('option');
+                    option.value = styleKey;
+                    option.textContent = style.name;
+                    styleSelect.appendChild(option);
+                });
+            }
+            
+            updateStyleInfo();
+        });
+
+        // 건축양식 선택 이벤트
+        styleSelect.addEventListener('change', updateStyleInfo);
+
+        function updateStyleInfo() {
+            const selectedCountry = countrySelect.value;
+            const selectedStyle = styleSelect.value;
+            
+            if (selectedCountry && selectedStyle && 
+                architectureData[selectedCountry] && 
+                architectureData[selectedCountry].styles[selectedStyle]) {
+                
+                const style = architectureData[selectedCountry].styles[selectedStyle];
+                styleInfo.innerHTML = `
+                    <h4>${style.name}</h4>
+                    <p><strong>특징:</strong> ${style.features}</p>
+                    <p><strong>설계 팁:</strong></p>
+                    <pre style="white-space: pre-line; font-family: inherit; margin: 5px 0;">${style.tips}</pre>
+                `;
+                
+                // 추천 색상 업데이트
+                updateRecommendedColors(style.colors);
+                showCanvas();
+            } else {
+                styleInfo.innerHTML = `
+                    <h4>건축양식을 선택해주세요</h4>
+                    <p>국가와 건축양식을 선택하면 해당 스타일의 특징과 설계 팁을 확인할 수 있습니다.</p>
+                `;
+            }
+        }
+
+        function updateRecommendedColors(colors) {
+            const colorPalette = document.querySelector('.color-palette');
+            colorPalette.innerHTML = '';
+            
+            colors.forEach((color, index) => {
+                const colorBtn = document.createElement('div');
+                colorBtn.className = `color-btn ${index === 0 ? 'active' : ''}`;
+                colorBtn.setAttribute('data-color', color);
+                colorBtn.style.background = color;
+                colorBtn.addEventListener('click', function() {
+                    document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    currentColor = color;
+                });
+                colorPalette.appendChild(colorBtn);
+            });
+            currentColor = colors[0];
+        }
+
+        function showCanvas() {
+            canvas.style.display = 'block';
+            canvasPlaceholder.style.display = 'none';
+        }
+
+        // 도구 선택
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentTool = this.getAttribute('data-tool');
+            });
+        });
+
+        // 색상 선택 (초기 색상들)
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentColor = this.getAttribute('data-color');
+            });
+        });
+
+        // 뷰 토글
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                // 뷰 변경 시 캔버스 초기화 (선택사항)
+            });
+        });
+
+        // 캔버스 그리기 이벤트
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            ctx.lineWidth = currentTool === 'eraser' ? 10 : 2;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = currentTool === 'eraser' ? '#FFFFFF' : currentColor;
+            
+            if (currentTool === 'pen' || currentTool === 'eraser') {
+                ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+                startX = currentX;
+                startY = currentY;
+            }
+        }
+
+        function stopDrawing(e) {
+            if (!isDrawing) return;
+            isDrawing = false;
+            
+            const rect = canvas.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+            
+            ctx.globalCompositeOperation = 'source-over';
+            
+            if (currentTool === 'line') {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            } else if (currentTool === 'rect') {
+                ctx.beginPath();
+                ctx.rect(startX, startY, endX - startX, endY - startY);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            } else if (currentTool === 'circle') {
+                const radius = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+                ctx.beginPath();
+                ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        // 액션 버튼들
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            if (confirm('캔버스를 지우시겠습니까?')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', function() {
+            // 실제로는 서버에 저장하거나 로컬스토리지에 저장
+            const imageData = canvas.toDataURL();
+            const notes = document.getElementById('designNotes').value;
+            console.log('Design saved:', { imageData, notes });
+            alert('설계가 저장되었습니다!');
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const link = document.createElement('a');
+            link.download = 'architecture_design.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    </script>
+</body>
+</html>
